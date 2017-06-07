@@ -1,98 +1,104 @@
-<?php  
+<?php
 
-/**  
- * @file  
- * Contains Drupal\govuk_notify\Form\GovUKNotifyForm.  
- */  
+namespace Drupal\govuk_notify\Form;
 
-namespace Drupal\govuk_notify\Form;  
-use Drupal\Core\Form\ConfigFormBase;  
-use Drupal\Core\Form\FormStateInterface;  
+use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
-class GovUKNotifyForm extends ConfigFormBase {  
+/**
+ * Admin form for GovUK Notify settings.
+ */
+class GovUKNotifyForm extends ConfigFormBase {
 
-  /**  
-   * {@inheritdoc}  
-   */  
-  protected function getEditableConfigNames() {  
-    return [  
-      'govuk_notify.settings',  
-    ];  
-  }  
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditableConfigNames() {
+    return [
+      'govuk_notify.settings',
+    ];
+  }
 
-  /**  
-   * {@inheritdoc}  
-   */  
-  public function getFormId() {  
-    return 'govuk_notify_form';  
-  }  
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormId() {
+    return 'govuk_notify_form';
+  }
 
-  /**  
-   * {@inheritdoc}  
-   */  
-  public function getFormTitle() {  
-    return 'GovUK Notify Configuration Settings';  
-  }  
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormTitle() {
+    return 'GovUK Notify Configuration Settings';
+  }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $config = $this->config('govuk_notify.settings');
 
-  /**  
-   * {@inheritdoc}  
-   */  
-  public function buildForm(array $form, FormStateInterface $form_state) {  
-    $config = $this->config('govuk_notify.settings');  
+    $form['api_key'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('API Key'),
+      '#description' => $this->t('The API key to use. You can generate an API key by logging in to GOV.UK Notify and going to the API integration page.'),
+      '#default_value' => $config->get('api_key'),
+    ];
 
-    $form['api_key'] = [  
-      '#type' => 'textfield',  
-      '#title' => $this->t('API Key'),  
-      '#description' => $this->t('The API key to use. You can generate an API key by logging in to GOV.UK Notify and going to the API integration page.'),  
-      '#default_value' => $config->get('api_key'),  
-    ];  
-
-    $form['default_template_id'] = [  
-      '#type' => 'textfield',  
-      '#title' => $this->t('Default template ID'),  
+    $form['default_template_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Default template ID'),
       '#description' => $this->t('The template ID to use if one is not specified. This template should have one single placeholderfor the subject, ((subject)), and one in the message body ((message))'),
-      '#default_value' => $config->get('default_template_id'),  
-    ];  
+      '#default_value' => $config->get('default_template_id'),
+    ];
 
-    $form['govuk_notify_email_test'] = [  
-      '#type' => 'textfield',  
-      '#title' => $this->t('Test email address'),  
+    $form['test_api_key'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Test API Key'),
+      '#description' => $this->t("A Test API key to enable the running of this module's tests"),
+      '#default_value' => $config->get('test_api_key'),
+    ];
+
+    $form['govuk_notify_email_test'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Test email address'),
       '#description' => $this->t('If you enter an email address into this field, the system will attempt to send an email to that address using the govuk notify service. You can use this to test that you have entered the correct API key.'),
-    ];  
+    ];
 
-    return parent::buildForm($form, $form_state);  
-  } 
+    return parent::buildForm($form, $form_state);
+  }
 
-  /**  
-   * {@inheritdoc}  
+  /**
+   * {@inheritdoc}
    *
    * If the gov_notify_email_test field has been completed we try to send an
    * email to the default template.
-   */  
-  public function submitForm(array &$form, FormStateInterface $form_state) {  
-    parent::submitForm($form, $form_state);  
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    parent::submitForm($form, $form_state);
 
-    $this->config('govuk_notify.settings')  
-      ->set('api_key', $form_state->getValue('api_key'))  
-      ->set('default_template_id', $form_state->getValue('default_template_id'))  
-      ->save();  
+    $this->config('govuk_notify.settings')
+      ->set('api_key', $form_state->getValue('api_key'))
+      ->set('default_template_id', $form_state->getValue('default_template_id'))
+      ->set('test_api_key', $form_state->getValue('test_api_key'))
+      ->save();
 
     if (!empty($form_state->getValue('govuk_notify_email_test'))) {
-			$mail_manager = \Drupal::service('plugin.manager.mail');
-			$to = $form_state->getValue('govuk_notify_email_test');
-			$langcode = \Drupal::currentUser()->getPreferredLangcode();
+      $mail_manager = \Drupal::service('plugin.manager.mail');
+      $to = $form_state->getValue('govuk_notify_email_test');
+      $langcode = \Drupal::currentUser()->getPreferredLangcode();
       $params['subject'] = t("This is a test message from the GovUK Drupal module.");
       $params['message'] = t("This is a test message. If you have received this message the GovUK Notify Drupal module is working succesfully");
-			$send = true;
-			$result = $mail_manager->mail('govuk_notify', NULL, $to, $langcode, $params, NULL, $send);
-			if ($result['result'] === false) {
-				drupal_set_message(t('There was a problem sending your test message and it was not sent.'), 'error');
-			}
-			else {
-				drupal_set_message(t('Test message has been sent.'));
-			}
-		}
-	}  
+      $send = TRUE;
+      $result = $mail_manager->mail('govuk_notify', NULL, $to, $langcode, $params, NULL, $send);
+      if ($result['result'] === FALSE) {
+        drupal_set_message(t('There was a problem sending your test message and it was not sent.'), 'error');
+      }
+      else {
+        drupal_set_message(t('Test message has been sent.'));
+      }
+    }
+  }
 
 }
