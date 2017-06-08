@@ -3,7 +3,6 @@
 namespace Drupal\govuk_notify\Plugin\Mail;
 
 use Http\Adapter\Guzzle6\Client;
-use Alphagov\Notifications\Client;
 use Drupal\Core\Mail\MailInterface;
 
 /**
@@ -25,7 +24,7 @@ class GovUKNotifyMail implements MailInterface {
   public function __construct() {
     $config = \Drupal::config('govuk_notify.settings');
     $api_key = $config->get('api_key');
-    $this->notifyClient = new Client([
+    $this->notifyClient = new \Alphagov\Notifications\Client([
       'apiKey' => $api_key,
       'httpClient' => new Client(),
     ]);
