@@ -8,7 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Admin form for GovUK Notify settings.
  */
-class GovUKNotifyForm extends ConfigFormBase {
+class GovUKNotifyAdminForm extends ConfigFormBase {
 
   /**
    * {@inheritdoc}
@@ -53,11 +53,18 @@ class GovUKNotifyForm extends ConfigFormBase {
       '#default_value' => $config->get('default_template_id'),
     ];
 
-    $form['test_api_key'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Test API Key'),
-      '#description' => $this->t("A Test API key to enable the running of this module's tests"),
-      '#default_value' => $config->get('test_api_key'),
+    $form['force_temporary_failure'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Always force a temporary failure'),
+      '#description' => $this->t("Ensures that all emails return a temporary failure. Requires that the API key is a test key (see https://www.notifications.service.gov.uk/integration_testing)."),
+      '#default_value' => $config->get('force_temporary_failure'),
+    ];
+
+    $form['force_permanent_failure'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Always force a permanent failure'),
+      '#description' => $this->t("Ensures that all emails return a permanent failure. Requires that the API key is a test key (see https://www.notifications.service.gov.uk/integration_testing)."),
+      '#default_value' => $config->get('force_permanent_failure'),
     ];
 
     $form['govuk_notify_email_test'] = [
@@ -81,7 +88,8 @@ class GovUKNotifyForm extends ConfigFormBase {
     $this->config('govuk_notify.settings')
       ->set('api_key', $form_state->getValue('api_key'))
       ->set('default_template_id', $form_state->getValue('default_template_id'))
-      ->set('test_api_key', $form_state->getValue('test_api_key'))
+      ->set('force_temporary_failure', $form_state->getValue('force_temporary_failure'))
+      ->set('force_permanent_failure', $form_state->getValue('force_permanent_failure'))
       ->save();
 
     if (!empty($form_state->getValue('govuk_notify_email_test'))) {

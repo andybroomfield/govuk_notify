@@ -4,6 +4,7 @@ namespace Drupal\govuk_notify\Plugin\Mail;
 
 use Http\Adapter\Guzzle6\Client;
 use Drupal\Core\Mail\MailInterface;
+use Alphagov\Notifications\Client as AlphagovClient;
 
 /**
  * Defines the GovUK Notify mail backend.
@@ -24,7 +25,7 @@ class GovUKNotifyMail implements MailInterface {
   public function __construct() {
     $config = \Drupal::config('govuk_notify.settings');
     $api_key = $config->get('api_key');
-    $this->notifyClient = new \Alphagov\Notifications\Client([
+    $this->notifyClient = new AlphagovClient([
       'apiKey' => $api_key,
       'httpClient' => new Client(),
     ]);
@@ -48,15 +49,27 @@ class GovUKNotifyMail implements MailInterface {
       $message['params'] = [];
     }
 
+    // @todo Duplicate for permanent failure.
+    // @todo Get email address from config.
+    if ($config->get('force_temporary_failure')) {
+      $temporary_email = 'temp-fail@simulator.notify';
+      \Drupal::logger('govuk_notify')->notice('Forcing use of email address @email', ['@email' => $temporary_email]);
+      $message['to'] = $temporary_email;
+    }
+
     return $message;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * This submits (NB not necessarily the same as send) a message to GovUK
+   * Notify.
    */
   public function mail(array $message) {
     $response = NULL;
 
+    // First, attempt to send the email.
     try {
 
       if (empty($message['to']) || empty($message['template_id']) || empty($message['params'])) {
@@ -68,15 +81,18 @@ class GovUKNotifyMail implements MailInterface {
         $message['template_id'],
         $message['params']
       );
+
     }
     catch (Exception $e) {
-      \Drupal::logger('govuk_notify')->notice("Failed to send message: " . $e->getMessage());
+      \Drupal::logger('govuk_notify')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
+      return FALSE;
     }
     catch (NotifyException $e) {
-      \Drupal::logger('govuk_notify')->notice("Failed to send message: " . $e->getMessage());
+      \Drupal::logger('govuk_notify')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
+      return FALSE;
     }
 
-    return $response;
+    return TRUE;
   }
 
 }
