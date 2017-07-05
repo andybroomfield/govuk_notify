@@ -3,6 +3,11 @@
 /**
  * @file
  * Views backend for GovUK Notify.
+ *
+ * Implements a views backend for Gov.UK Notify to enable the creation of eg
+ * dashboards.
+ *
+ * @see https://github.com/alphagov/notifications-php-client
  */
 
 /**
@@ -38,6 +43,18 @@ function govuk_notify_views_backend_views_data() {
       'field' => [
         'id' => 'standard',
       ],
+    ];
+  }
+
+  $filterable_fields = [
+    'id',
+    'type',
+    'status',
+  ];
+
+  foreach ($filterable_fields as $filter_field) {
+    $data['govuk_notify_views_backend'][$filter_field]['filter'] = [
+      'id' => "govuk_notify_filter_{$filter_field}",
     ];
   }
 

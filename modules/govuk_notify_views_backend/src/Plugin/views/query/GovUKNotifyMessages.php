@@ -54,45 +54,82 @@ class GovUKNotifyMessages extends QueryPluginBase {
   /**
    * {@inheritdoc}
    */
+  public function addWhere($group, $field, $value = NULL, $operator = NULL) {
+    // Ensure all variants of 0 are actually 0. Thus '', 0 and NULL are all
+    // the default group.
+    if (empty($group)) {
+      $group = 0;
+    }
+    // Check for a group.
+    if (!isset($this->where[$group])) {
+      $this->setWhereGroup('AND', $group);
+    }
+    $this->where[$group]['conditions'][] = [
+      'field' => $field,
+      'value' => $value,
+      'operator' => $operator,
+    ];
+  }
+
+  /**
+   * Execute the view by calling the Gov.UK Notify API.
+   *
+   * This builds up the filters then calls the Gov.UK Notify API then adds each
+   * returned record to the view's result.
+   *
+   * @todo - paging
+   * {@inheritdoc}
+   */
   public function execute(ViewExecutable $view) {
 
     $index = 0;
 
+    // I think this is needed in order to recover safely from an aborted query.
+    $view->initPager();
+
     try {
 
-      $response = $this->notifyClient->listNotifications();
+      // Build the filters we're going to apply.
+      $filters = [];
+      if (!empty($this->where)) {
+        foreach ($this->where as $where_group => $where) {
+          foreach ($where['conditions'] as $condition) {
+            $filter_name = ltrim($condition['field'], '.');
+            if ($filter_name == 'type') {
+              $filter_name = 'template_type';
+            }
+            $filters[$filter_name] = current($condition['value']);
+          }
+        }
+      }
 
+      // Call the API.
+      $response = $this->notifyClient->listNotifications($filters);
+
+      // Add each record to the results.
       foreach ($response['notifications'] as $notification) {
         foreach ($notification as $notification_key => $notification_value) {
           $row[$notification_key] = $notification_value;
         }
-        /**
-        $row['id'] = $notification['id'];
-        $row['email_address'] = $notification['email_address'];
-        */
         $row['index'] = $index++;
         $view->result[] = new ResultRow($row);
       }
     }
-    catch (Exception $e) {
-      \Drupal::logger('govuk_notify_views_backend')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
-      return FALSE;
-    }
     catch (NotifyException $e) {
-      \Drupal::logger('govuk_notify_views_backend')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
-      return FALSE;
+      // @todo - better message here.
+      \Drupal::logger('govuk_notify_views_backend')->notice("Exception occurred.");
     }
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function ensureTable($table, $relationship = NULL) {
     return '';
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function addField($table, $field, $alias = '', $params = []) {
     return $field;
