@@ -4,10 +4,9 @@ namespace Drupal\govuk_notify_views_backend\Plugin\views\query;
 
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Alphagov\Notifications\Client as AlphagovClient;
-use Http\Adapter\Guzzle6\Client;
 use Drupal\views\ViewExecutable;
 use Drupal\views\ResultRow;
+use Drupal\govuk_notify\NotifyService\NotifyServiceInterface;
 
 /**
  * Queries GovUK notify.
@@ -27,15 +26,9 @@ class GovUKNotifyMessages extends QueryPluginBase {
    *
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, NotifyServiceInterface $notify_service) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    // @todo - put this into constructor fn declaration.
-    $config = \Drupal::config('govuk_notify.settings');
-    $api_key = $config->get('api_key');
-    $this->notifyClient = new AlphagovClient([
-      'apiKey' => $api_key,
-      'httpClient' => new Client(),
-    ]);
+    $this->notifyClient = $notify_service;
   }
 
   /**
@@ -45,9 +38,8 @@ class GovUKNotifyMessages extends QueryPluginBase {
     return new static(
       $configuration,
       $plugin_id,
-      $plugin_definition
-      /* $container->get('govuk_notify.client'), */
-      /* $container->get('govuk_notify.access_token_manager') */
+      $plugin_definition,
+      $container->get('govuk_notify.notify_service')
     );
   }
 

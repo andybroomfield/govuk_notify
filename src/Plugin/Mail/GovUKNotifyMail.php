@@ -2,9 +2,10 @@
 
 namespace Drupal\govuk_notify\Plugin\Mail;
 
-use Http\Adapter\Guzzle6\Client;
 use Drupal\Core\Mail\MailInterface;
-use Alphagov\Notifications\Client as AlphagovClient;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\govuk_notify\NotifyService\NotifyServiceInterface;
 
 /**
  * Defines the GovUK Notify mail backend.
@@ -15,20 +16,27 @@ use Alphagov\Notifications\Client as AlphagovClient;
  *   description = @Translation("Sends an email using the GOV UK Notify service.")
  * )
  */
-class GovUKNotifyMail implements MailInterface {
+class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface {
 
-  private $notifyClient;
+  private $notifyService;
 
   /**
    * Create the GovUK notify API client.
    */
-  public function __construct() {
-    $config = \Drupal::config('govuk_notify.settings');
-    $api_key = $config->get('api_key');
-    $this->notifyClient = new AlphagovClient([
-      'apiKey' => $api_key,
-      'httpClient' => new Client(),
-    ]);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, NotifyServiceInterface $notify_service) {
+    $this->notifyService = $notify_service;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('govuk_notify.notify_service')
+    );
   }
 
   /**
@@ -67,32 +75,21 @@ class GovUKNotifyMail implements MailInterface {
    * Notify.
    */
   public function mail(array $message) {
-    $response = NULL;
+    $response = FALSE;;
 
-    // First, attempt to send the email.
-    try {
-
-      if (empty($message['to']) || empty($message['template_id']) || empty($message['params'])) {
-        throw new Exception("message is missing one of the required parameters - to, template_id or params. " . print_r($message, 1));
-      }
-
-      $response = $this->notifyClient->sendEmail(
+    if (!empty($message['to']) || !empty($message['template_id']) || !empty($message['params'])) {
+      $response = $this->notifyService->sendEmail(
         $message['to'],
         $message['template_id'],
         $message['params']
       );
-
     }
-    catch (Exception $e) {
-      \Drupal::logger('govuk_notify')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
-      return FALSE;
-    }
-    catch (NotifyException $e) {
-      \Drupal::logger('govuk_notify')->notice("Failed to submit message to GovUK Notify: " . $e->getMessage());
-      return FALSE;
+    else {
+      \Drupal::logger('govuk_notify')->warning('Message was missing one of the required parameters - to, template_id or params');
     }
 
-    return TRUE;
+    return $response;
+
   }
 
 }
