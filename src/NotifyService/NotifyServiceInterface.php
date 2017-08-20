@@ -3,12 +3,12 @@
 namespace Drupal\govuk_notify\NotifyService;
 
 /**
- *
+ * Interface for Notify Services.
  */
 interface NotifyServiceInterface {
 
   /**
-   *
+   * Constructor.
    */
   public function __construct();
 
@@ -16,6 +16,7 @@ interface NotifyServiceInterface {
    * Send an email via Notify.
    *
    * @return mixed
+   *   The value returned by the service.
    */
   public function sendEmail($to, $template_id, $params);
 
@@ -38,7 +39,7 @@ interface NotifyServiceInterface {
    * @param string $replacement
    *   The replacement token to check for.
    *
-   * @return boolean
+   * @return bool
    *   TRUE if the token exists in the component.
    */
   public function checkReplacement($component, $replacement);

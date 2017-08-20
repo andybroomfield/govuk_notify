@@ -7,7 +7,7 @@ use Http\Adapter\Guzzle6\Client;
 use Alphagov\Notifications\Client as AlphagovClient;
 
 /**
- * 
+ * Service class for GovUK Notify.
  */
 class GovUKNotifyService implements NotifyServiceInterface {
 
@@ -36,7 +36,6 @@ class GovUKNotifyService implements NotifyServiceInterface {
 
   /**
    * {@inheritdoc}
-   *
    */
   public function sendEmail($to, $template_id, $params) {
 
@@ -91,7 +90,7 @@ class GovUKNotifyService implements NotifyServiceInterface {
    * {@inheritdoc}
    */
   public function checkReplacement($value, $replacement) {
-    return strpos($value, "(($replacement))") !== false;
+    return strpos($value, "(($replacement))") !== FALSE;
   }
 
   /**
