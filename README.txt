@@ -49,8 +49,9 @@ Go to /admin/config/govuk_notify/settings to configure the module.
 
 7 (optional). To test the system enter an email address in the 'Test email address' field. When you click the 'Save configuration' button an email will be sent to the email address that you've entered. NB If your account is still in trial mode then you'll only be able to send emails to members of your team.
 
-8 (optional) If you're using a Test (not Trial) API Key then you can simulate temporary and permanent failures by checking either the "Always force a temporary failure" or "Always force a permanent failure" - this will force the module to use the email addresses listed at https://www.notifications.service.gov.uk/integration_testing.
+8 (optional) If you want to send enable all system emails to be sent through Notify ensure that then check the 'Use GOVUK Notify to send system emails' field.
 
+9 (optional) If you're using a Test (not Trial) API Key then you can simulate temporary and permanent failures by checking either the "Always force a temporary failure" or "Always force a permanent failure" - this will force the module to use the email addresses listed at https://www.notifications.service.gov.uk/integration_testing.
 
 FUTURE WORK
 -----------

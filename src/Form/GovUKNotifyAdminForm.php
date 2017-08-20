@@ -2,6 +2,7 @@
 
 namespace Drupal\govuk_notify\Form;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -53,6 +54,14 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
       '#default_value' => $config->get('default_template_id'),
     ];
 
+    $mail_interfaces = $this->config('system.mail')->get('interface');
+    $form['send_system_emails'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Use GOVUK Notify to send system emails'),
+      '#description' => $this->t("Ensures that all system emails are sent using GovUK Notify"),
+      '#default_value' => ($mail_interfaces['default'] == 'govuk_notify_mail'),
+    ];
+
     $form['force_temporary_failure'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Always force a temporary failure'),
@@ -91,6 +100,22 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
       ->set('force_temporary_failure', $form_state->getValue('force_temporary_failure'))
       ->set('force_permanent_failure', $form_state->getValue('force_permanent_failure'))
       ->save();
+    Cache::invalidateTags(["govuk_notify_template:{$form_state->getValue('default_template_id')}"]);
+
+    // Set the default mail interface to govuk_notify, if that's what we want.
+    // Or if it was previously set to govuk_notify and we no longer want to use
+    // that for default messages then set it back to php_mail.
+    $mail_interfaces = $this->config('system.mail')->get('interface');
+    if ($form_state->getValue('send_system_emails')) {
+      $mail_interfaces['default'] = 'govuk_notify_mail';
+      \Drupal::service('config.factory')->getEditable('system.mail')->set('interface', $mail_interfaces)->save();
+    }
+    else {
+      if (isset($mail_interfaces['default']) && $mail_interfaces['default'] == 'govuk_notify_mail') {
+        $mail_interfaces['default'] = 'php_mail';
+        \Drupal::service('config.factory')->getEditable('system.mail')->set('interface', $mail_interfaces)->save();
+      }
+    }
 
     if (!empty($form_state->getValue('govuk_notify_email_test'))) {
       $mail_manager = \Drupal::service('plugin.manager.mail');

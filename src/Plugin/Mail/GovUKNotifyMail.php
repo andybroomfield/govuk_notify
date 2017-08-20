@@ -75,9 +75,36 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
    * Notify.
    */
   public function mail(array $message) {
-    $response = FALSE;;
+    $response = FALSE;
 
-    if (!empty($message['to']) || !empty($message['template_id']) || !empty($message['params'])) {
+    $template = $this->notifyService->getTemplate($message['template_id']);
+    if (empty($message['params']['subject']) && !empty($message['subject']) && isset($template['subject'])
+      && $this->notifyService->checkReplacement($template['subject'], 'subject')) {
+      $message['params']['subject'] = $message['subject'];
+    }
+    // If we don't have a body set, get the default drupal body param.
+    if (empty($message['params']['message']) && !empty($message['body']) && isset($template['body'])
+      && $this->notifyService->checkReplacement($template['body'], 'message')) {
+      $message['params']['message'] = current($message['body']);
+    }
+
+    // If we're using the default GovUK template then we should ensure that our
+    // params contain 'subject' and 'message' keys. Otherwise we should just
+    // check for 'to', 'template_id' or 'params' just being present.
+    $warning_message = "";
+
+    $config = \Drupal::config('govuk_notify.settings');
+
+    if (empty($message['to']) || empty($message['template_id']) || empty($message['params'])) {
+      $warning_message = "Missing one of the required parameters, 'to', 'template_id' or 'params'";
+    }
+    elseif ($config->get('default_template_id') == $message['template_id']) {
+      if (empty($message['params']['subject']) || empty($message['params']['message'])) {
+        $warning_message = "Using default template, but not supplying 'subject' or 'message' in params";
+      }
+    }
+
+    if (empty($warning_message)) {
       $response = $this->notifyService->sendEmail(
         $message['to'],
         $message['template_id'],
@@ -85,7 +112,7 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
       );
     }
     else {
-      \Drupal::logger('govuk_notify')->warning('Message was missing one of the required parameters - to, template_id or params');
+      \Drupal::logger('govuk_notify')->warning('Message was not submitted to GovUK Notify - @warning_message', ['@warning_message' => $warning_message]);
     }
 
     return $response;
