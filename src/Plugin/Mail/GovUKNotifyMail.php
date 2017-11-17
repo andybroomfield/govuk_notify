@@ -95,7 +95,7 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
 
     $config = \Drupal::config('govuk_notify.settings');
 
-    if (empty($message['to']) || empty($message['template_id']) || empty($message['params'])) {
+    if (empty($message['to']) || empty($message['template_id']) || (empty($message['params']) && !is_array($message['params']))) {
       $warning_message = "Missing one of the required parameters, 'to', 'template_id' or 'params'";
     }
     elseif ($config->get('default_template_id') == $message['template_id']) {
