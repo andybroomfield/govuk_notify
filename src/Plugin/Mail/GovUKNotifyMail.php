@@ -6,6 +6,7 @@ use Drupal\Core\Mail\MailInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\govuk_notify\NotifyService\NotifyServiceInterface;
+use Egulias\EmailValidator\EmailValidator;
 
 /**
  * Defines the GovUK Notify mail backend.
@@ -20,11 +21,14 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
 
   private $notifyService;
 
+  private $emailValidator;
+
   /**
    * Create the GovUK notify API client.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, NotifyServiceInterface $notify_service) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, NotifyServiceInterface $notify_service, EmailValidator $email_validator) {
     $this->notifyService = $notify_service;
+    $this->emailValidator = $email_validator;
   }
 
   /**
@@ -35,7 +39,8 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('govuk_notify.notify_service')
+      $container->get('govuk_notify.notify_service'),
+      $container->get('email.validator')
     );
   }
 
@@ -105,11 +110,21 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
     }
 
     if (empty($warning_message)) {
-      $response = $this->notifyService->sendEmail(
-        $message['to'],
-        $message['template_id'],
-        $message['params']
-      );
+      if($this->emailValidator->isValid($message['to'])) {
+        // Treat as email.
+        $response = $this->notifyService->sendEmail(
+          $message['to'],
+          $message['template_id'],
+          $message['params']
+        );
+      } else {
+        // Treat as text message.
+        $response = $this->notifyService->sendSms(
+          $message['to'],
+          $message['template_id'],
+          $message['params']
+        );
+      }
     }
     else {
       \Drupal::logger('govuk_notify')->warning('Message was not submitted to GovUK Notify - @warning_message', ['@warning_message' => $warning_message]);

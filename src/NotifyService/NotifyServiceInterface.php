@@ -21,6 +21,14 @@ interface NotifyServiceInterface {
   public function sendEmail($to, $template_id, $params);
 
   /**
+   * Send a text via Notify.
+   *
+   * @return mixed
+   *   The value returned by the service.
+   */
+  public function sendSms($to, $template_id, $params);
+
+  /**
    * Load a template from Notify.
    *
    * @param string $template_id

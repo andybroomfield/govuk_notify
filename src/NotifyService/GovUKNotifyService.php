@@ -56,6 +56,25 @@ class GovUKNotifyService implements NotifyServiceInterface {
   /**
    * {@inheritdoc}
    */
+  public function sendSms($to, $template_id, $params) {
+
+    try {
+      return $this->notifyClient->sendSms($to, $template_id, $params);
+    }
+    catch (\Alphagov\Notifications\Exception\ApiException $e) {
+      \Drupal::logger('govuk_notify')->warning("Failed to send text message using API: @message",
+        ['@message' => $e->getMessage()]);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('govuk_notify')->warning("Failed to send text message using API: @message",
+        ['@message' => $e->getMessage()]);
+    }
+    return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getTemplate($template_id) {
     $template = &drupal_static(__FUNCTION__);
     if (is_null($template)) {
