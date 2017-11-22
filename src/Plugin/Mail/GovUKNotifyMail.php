@@ -20,7 +20,6 @@ use Egulias\EmailValidator\EmailValidator;
 class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface {
 
   private $notifyService;
-
   private $emailValidator;
 
   /**
@@ -54,8 +53,15 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
   public function format(array $message) {
     $config = \Drupal::config('govuk_notify.settings');
 
+    if ($this->isEmail($message['to'])) {
+      $default_template_id = $config->get('default_template_id');
+    }
+    else {
+      $default_template_id = $config->get('default_sms_template_id');
+    }
+
     if (empty($message['template_id'])) {
-      $message['template_id'] = $config->get('default_template_id');
+      $message['template_id'] = $default_template_id;
     }
 
     if (empty($message['params'])) {
@@ -110,21 +116,17 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
     }
 
     if (empty($warning_message)) {
-      if($this->emailValidator->isValid($message['to'])) {
-        // Treat as email.
-        $response = $this->notifyService->sendEmail(
-          $message['to'],
-          $message['template_id'],
-          $message['params']
-        );
-      } else {
-        // Treat as text message.
-        $response = $this->notifyService->sendSms(
-          $message['to'],
-          $message['template_id'],
-          $message['params']
-        );
+      if ($this->isEmail($message['to'])) {
+        $sendMethod = 'sendEmail';
       }
+      else {
+        $sendMethod = 'sendSMS';
+      }
+      $response = $this->notifyService->$sendMethod(
+        $message['to'],
+        $message['template_id'],
+        $message['params']
+      );
     }
     else {
       \Drupal::logger('govuk_notify')->warning('Message was not submitted to GovUK Notify - @warning_message', ['@warning_message' => $warning_message]);
@@ -132,6 +134,22 @@ class GovUKNotifyMail implements MailInterface, ContainerFactoryPluginInterface 
 
     return $response;
 
+  }
+
+  /**
+   * Identifies whether or not an address is an email.
+   *
+   * The implication is that if this is not an email address
+   * then the recipient is an SMS.
+   *
+   * @param string $recipient
+   *   An address to validate as an email.
+   *
+   * @return bool
+   *   TRUE if an email address, else FALSE.
+   */
+  protected function isEmail($recipient) {
+    return $this->emailValidator->isValid($recipient);
   }
 
 }

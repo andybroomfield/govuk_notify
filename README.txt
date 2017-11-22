@@ -39,7 +39,7 @@ Click 'Create an API Key'
 Give the Key a name and select the type of key
 Note down the API Key you're given.
 
-3. Create a 'Default' template:
+3. Create a 'Default' email template:
 When sending messages through the Gov.UK Notify API Drupal can either use a
 specific template, or a 'default' template which just contains one replacement
 token for the subject and one for the entire message body. This provides some
@@ -51,34 +51,43 @@ Click 'Create Template'
 Select 'Email'
 In subject just enter ((subject))
 In message just enter ((message))
-Save the Template and note the message ID.
+Save the Template and note the template ID.
 
-4. Enable the govuk_notify module if you've not done so already, then 
+4. Similarly for SMS messages, create a 'Default' SMS template:
+Login to Gov.UK Notify
+Click on 'Templates'
+Click 'Create Template'
+Select 'Text'
+In message just enter ((message))
+Save the Template and note the template ID.
+
+5. Enable the govuk_notify module if you've not done so already, then 
 Go to /admin/config/govuk_notify/settings to configure the module.
 
+6. In the field 'API Key' enter your GovUK Notify API Key from step 2.
 
-5. In the field 'API Key' enter your GovUK Notify API Key from step 2.
-
-6. In the field 'Default template ID' enter the ID of your default template from
+7. In the field 'Default template ID' enter the ID of your default template from
 step 3.
 
-7 (optional). To test the system enter an email address in the 'Test email
+8. In the field 'Default SMS template ID' enter the ID of your default SMS template from
+step 4.
+
+9. (optional). To test the system enter an email address in the 'Test email
 address' field. When you click the 'Save configuration' button an email will be
 sent to the email address that you've entered. NB If your account is still in
 trial mode then you'll only be able to send emails to members of your team.
 
-8 (optional) If you want to send enable all system emails to be sent through
+10. (optional). To test the system enter a phone number in the 'Test SMS
+address' field. When you click the 'Save configuration' button an SMS will be
+sent to the phone number that you've entered. NB If your account is still in
+trial mode then you'll only be able to send SMS messages to members of your team.
+
+11. (optional) If you want to send enable all system emails to be sent through
 Notify ensure that then check the 'Use GOVUK Notify to send system emails'
 field.
 
-9 (optional) If you're using a Test (not Trial) API Key then you can simulate
+12. (optional) If you're using a Test (not Trial) API Key then you can simulate
 temporary and permanent failures by checking either the "Always force a
 temporary failure" or "Always force a permanent failure" - this will force the
 module to use the email addresses listed at
 https://www.notifications.service.gov.uk/integration_testing.
-
-FUTURE WORK
------------
-
-Possibly Extend to send SMS and other types of notifications as supported by
-GovUK Notify.

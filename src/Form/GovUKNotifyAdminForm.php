@@ -54,6 +54,13 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
       '#default_value' => $config->get('default_template_id'),
     ];
 
+    $form['default_sms_template_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Default SMS template ID'),
+      '#description' => $this->t('The template ID to use for SMS messages if one is not specified. This template should have one single placeholderfor the message body ((message))'),
+      '#default_value' => $config->get('default_sms_template_id'),
+    ];
+
     $mail_interfaces = $this->config('system.mail')->get('interface');
     $form['send_system_emails'] = [
       '#type' => 'checkbox',
@@ -82,6 +89,12 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
       '#description' => $this->t('If you enter an email address into this field, the system will attempt to send an email to that address using the govuk notify service. You can use this to test that you have entered the correct API key.'),
     ];
 
+    $form['govuk_notify_sms_test'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Test phone number for SMS'),
+      '#description' => $this->t('If you enter a phone number into this field, the system will attempt to send an SMS to that phone the govuk notify service. You can use this to test that you have entered the correct API key.'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -97,6 +110,7 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
     $this->config('govuk_notify.settings')
       ->set('api_key', $form_state->getValue('api_key'))
       ->set('default_template_id', $form_state->getValue('default_template_id'))
+      ->set('default_sms_template_id', $form_state->getValue('default_sms_template_id'))
       ->set('force_temporary_failure', $form_state->getValue('force_temporary_failure'))
       ->set('force_permanent_failure', $form_state->getValue('force_permanent_failure'))
       ->save();
@@ -126,10 +140,25 @@ class GovUKNotifyAdminForm extends ConfigFormBase {
       $send = TRUE;
       $result = $mail_manager->mail('govuk_notify', NULL, $to, $langcode, $params, NULL, $send);
       if ($result['result'] === FALSE) {
-        drupal_set_message(t('There was a problem sending your test message and it was not sent.'), 'error');
+        drupal_set_message(t('There was a problem sending your test email and it was not sent.'), 'error');
       }
       else {
-        drupal_set_message(t('Test message has been sent.'));
+        drupal_set_message(t('Test email has been sent.'));
+      }
+    }
+
+    if (!empty($form_state->getValue('govuk_notify_sms_test'))) {
+      $mail_manager = \Drupal::service('plugin.manager.mail');
+      $to = $form_state->getValue('govuk_notify_sms_test');
+      $langcode = \Drupal::currentUser()->getPreferredLangcode();
+      $params['message'] = t("This is a test SMS message. If you have received this message the GovUK Notify Drupal module is working succesfully");
+      $send = TRUE;
+      $result = $mail_manager->mail('govuk_notify', NULL, $to, $langcode, $params, NULL, $send);
+      if ($result['result'] === FALSE) {
+        drupal_set_message(t('There was a problem sending your test SMS and it was not sent.'), 'error');
+      }
+      else {
+        drupal_set_message(t('Test SMS has been sent.'));
       }
     }
   }
