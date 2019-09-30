@@ -1,0 +1,5 @@
+govuk_notify.admin_settings_form:
+  title: 'Gov UK Notify'
+  description: 'Configure Gov UK Notify settings'
+  parent: system.admin_config_system
+  route_name: govuk_notify.admin_settings_form
