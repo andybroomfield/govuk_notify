@@ -4,6 +4,6 @@ govuk_notify.admin_settings_form:
     _form: '\Drupal\govuk_notify\Form\GovUKNotifyAdminForm'  
     _title: 'GovUKNotifyAdminForm'  
   requirements:  
-    _permission: 'access administration pages'  
+    _permission: 'administrator gov uk notify'  
   options:  
     _admin_route: TRUE
